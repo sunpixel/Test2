@@ -8,7 +8,7 @@ from link_validator import LinkValidator
 from speed_tester import SpeedTester
 
 REQUEST_COUNT = 10
-INVALID_MESSAGE = "Link is not valid try again."
+INVALID_MESSAGE = "Ссылка недействительна, попробуйте снова."
 
 
 class LinkTesterApp(App):
@@ -20,7 +20,7 @@ class LinkTesterApp(App):
     #buttons Button { margin-right: 2; }
     #input_row { height: 3; margin-top: 1; visibility: hidden; }
     #link_input { width: 1fr; }
-    #save { width: 10; margin-left: 1; }
+    #save { width: 16; margin-left: 1; }
     #message { height: 1; color: red; }
     #stats { height: 5; margin-top: 1; }
     """
@@ -31,14 +31,14 @@ class LinkTesterApp(App):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="panel"):
-            yield Static("Link: not set", id="link_value")
+            yield Static("Ссылка: не задана", id="link_value")
             with Horizontal(id="buttons"):
-                yield Button("Link", id="link")
-                yield Button("Test", id="test", disabled=True)
-                yield Button("Exit", id="exit")
+                yield Button("Ссылка", id="link")
+                yield Button("Тест", id="test", disabled=True)
+                yield Button("Выход", id="exit")
             with Horizontal(id="input_row"):
-                yield Input(placeholder="Paste a link here", id="link_input")
-                yield Button("Save", id="save", variant="success")
+                yield Input(placeholder="Вставьте ссылку сюда", id="link_input")
+                yield Button("Сохранить", id="save", variant="success")
             yield Static("", id="message")
             yield Static("", id="stats")
 
@@ -66,14 +66,14 @@ class LinkTesterApp(App):
     def on_input_submitted(self, event: Input.Submitted):
         self.save_link()
 
-    # Validates the typed link, stores it and unlocks the Test button
+    # Проверяет введённую ссылку, сохраняет её и включает кнопку Тест
     def save_link(self):
         value = self.query_one("#link_input", Input).value.strip()
         if not LinkValidator.is_valid(value):
             self.query_one("#message", Static).update(INVALID_MESSAGE)
             return
         self.link = value
-        self.query_one("#link_value", Static).update(Text(f"Link: {value}"))
+        self.query_one("#link_value", Static).update(Text(f"Ссылка: {value}"))
         self.query_one("#test", Button).disabled = False
         self.query_one("#input_row").styles.visibility = "hidden"
         self.query_one("#link", Button).focus()
@@ -84,21 +84,21 @@ class LinkTesterApp(App):
 
     def show_progress(self, stats, current_request):
         self.query_one("#stats", Static).update(
-            f"Request: {current_request}/{REQUEST_COUNT}\n"
-            f"Data received: {stats.total_mb:.2f} MB\n"
-            f"Speed: {stats.kb_per_second:.1f} KB/s | {stats.mb_per_second:.2f} MB/s\n"
-            f"Average request time: {stats.average_time:.3f} s"
+            f"Запрос: {current_request}/{REQUEST_COUNT}\n"
+            f"Получено данных: {stats.total_mb:.2f} МБ\n"
+            f"Скорость: {stats.kb_per_second:.1f} КБ/с | {stats.mb_per_second:.2f} МБ/с\n"
+            f"Среднее время запроса: {stats.average_time:.3f} с"
         )
 
-    # Runs the whole test and always unlocks the buttons afterwards
+    # Запускает весь тест и в конце всегда разблокирует кнопки
     async def run_test(self):
         self.set_busy(True)
         stats_widget = self.query_one("#stats", Static)
-        stats_widget.update("Starting...")
+        stats_widget.update("Запуск...")
         tester = SpeedTester(self.link, REQUEST_COUNT, self.show_progress)
         try:
             await tester.run()
         except httpx.HTTPError as error:
-            stats_widget.update(Text(f"Request failed: {error}"))
+            stats_widget.update(Text(f"Ошибка запроса: {error}"))
         finally:
             self.set_busy(False)
